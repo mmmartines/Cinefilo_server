@@ -22,22 +22,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user = await authenticateUser(req);
     const usersCollection = db.collection('users');
 
-    const { total_movies, total_minutes, watched_movies } = req.body;
+    const { total_movies, total_minutes, watched_movies, avatar_url, expo_push_token, notifications_enabled } = req.body;
 
     if (typeof total_movies !== 'number' || typeof total_minutes !== 'number') {
       return res.status(400).json({ error: 'Dados estatísticos inválidos.' });
     }
 
+    const updateFields: any = {
+      'stats.total_movies': total_movies,
+      'stats.total_minutes': total_minutes,
+      'watched_movies': watched_movies || []
+    };
+    
+    if (avatar_url !== undefined) updateFields.avatar_url = avatar_url;
+    if (expo_push_token !== undefined) updateFields.expo_push_token = expo_push_token;
+    if (notifications_enabled !== undefined) updateFields.notifications_enabled = notifications_enabled;
+
     // Atualiza os stats e as listas de filmes no Astra DB
     await usersCollection.updateOne(
       { supabase_id: user.id },
-      { 
-        $set: { 
-          'stats.total_movies': total_movies,
-          'stats.total_minutes': total_minutes,
-          'watched_movies': watched_movies || []
-        } 
-      }
+      { $set: updateFields }
     );
 
     return res.status(200).json({ success: true, message: 'Dados sincronizados com sucesso' });

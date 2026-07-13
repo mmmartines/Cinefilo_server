@@ -47,6 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         id: p.supabase_id,
         name: p.name,
         tag: p.tag,
+        avatar_url: p.avatar_url || null,
         isMe: p.supabase_id === user.id,
         total_movies: p.stats?.total_movies || 0,
         total_minutes: p.stats?.total_minutes || 0,

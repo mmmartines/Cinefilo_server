@@ -19,5 +19,8 @@
     "@types/node": "^26.1.1",
     "@vercel/node": "^5.8.23",
     "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }

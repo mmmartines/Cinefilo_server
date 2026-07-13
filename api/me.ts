@@ -6,7 +6,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
 
   if (req.method === 'OPTIONS') {
@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  if (req.method !== 'POST') {
+  if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
@@ -22,29 +22,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user = await authenticateUser(req);
     const usersCollection = db.collection('users');
 
-    const { total_movies, total_minutes, watched_movies, custom_lists } = req.body;
+    const myProfile = await usersCollection.findOne({ supabase_id: user.id });
+    if (!myProfile) return res.status(404).json({ error: 'Perfil não encontrado' });
 
-    if (typeof total_movies !== 'number' || typeof total_minutes !== 'number') {
-      return res.status(400).json({ error: 'Dados estatísticos inválidos.' });
-    }
-
-    // Atualiza os stats e as listas de filmes no Astra DB
-    await usersCollection.updateOne(
-      { supabase_id: user.id },
-      { 
-        $set: { 
-          'stats.total_movies': total_movies,
-          'stats.total_minutes': total_minutes,
-          'watched_movies': watched_movies || [],
-          'custom_lists': custom_lists || []
-        } 
-      }
-    );
-
-    return res.status(200).json({ success: true, message: 'Dados sincronizados com sucesso' });
+    return res.status(200).json({ 
+      success: true, 
+      data: {
+        id: myProfile.supabase_id,
+        name: myProfile.name,
+        tag: myProfile.tag,
+        stats: myProfile.stats,
+        watched_movies: myProfile.watched_movies || [],
+        custom_lists: myProfile.custom_lists || []
+      } 
+    });
 
   } catch (error: any) {
-    console.error('Erro na API /sync:', error);
+    console.error('Erro na API /me:', error);
     return res.status(401).json({ error: error.message || 'Não autorizado' });
   }
 }

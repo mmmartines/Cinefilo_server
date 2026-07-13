@@ -32,8 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         name: myProfile.name,
         tag: myProfile.tag,
         stats: myProfile.stats,
-        watched_movies: myProfile.watched_movies || [],
-        custom_lists: myProfile.custom_lists || []
+        watched_movies: myProfile.watched_movies || []
       } 
     });
 

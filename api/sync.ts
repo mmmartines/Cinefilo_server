@@ -22,7 +22,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user = await authenticateUser(req);
     const usersCollection = db.collection('users');
 
-    const { total_movies, total_minutes, watched_movies, custom_lists } = req.body;
+    const { total_movies, total_minutes, watched_movies } = req.body;
 
     if (typeof total_movies !== 'number' || typeof total_minutes !== 'number') {
       return res.status(400).json({ error: 'Dados estatísticos inválidos.' });
@@ -35,8 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         $set: { 
           'stats.total_movies': total_movies,
           'stats.total_minutes': total_minutes,
-          'watched_movies': watched_movies || [],
-          'custom_lists': custom_lists || []
+          'watched_movies': watched_movies || []
         } 
       }
     );

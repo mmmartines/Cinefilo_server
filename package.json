@@ -16,11 +16,10 @@
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
-    "@types/node": "^26.1.1",
     "@vercel/node": "^5.8.23",
-    "typescript": "^7.0.2"
+    "typescript": "^5.4.5"
   },
   "engines": {
-    "node": "20.x"
+    "node": "22.x"
   }
 }

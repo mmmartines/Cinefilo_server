@@ -3,8 +3,7 @@ import { authenticateUser } from '../../utils/supabase';
 import { db } from '../../utils/astra';
 import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
+// Inicialização será feita no handler para garantir que as vars de ambiente estejam carregadas
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -21,6 +20,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'Chave da API do Gemini não configurada no servidor.' });
+    }
+    
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const user = await authenticateUser(req);
     const usersCollection = db.collection('users');
 
@@ -48,7 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     promptText += "\nBaseado nisso, recomende 3 filmes parecidos que ele possa gostar, explicando brevemente o porquê de forma amigável e direta (use até 4 parágrafos no máximo). Não precisa colocar saudações iniciais, apenas comece a recomendar.";
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash',
       contents: promptText,
     });
 

@@ -52,7 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     promptText += "\nBaseado nisso, recomende 3 filmes parecidos que ele possa gostar, explicando brevemente o porquê de forma amigável e direta (use até 4 parágrafos no máximo). Não precisa colocar saudações iniciais, apenas comece a recomendar.";
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: promptText,
     });
 

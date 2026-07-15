@@ -37,8 +37,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (req.method === 'POST') {
-      const { movie, action, rating, review, has_spoiler } = req.body;
-      if (!movie || !action) return res.status(400).json({ error: 'movie e action são obrigatórios' });
+      const { movie, action, rating, review, has_spoiler, badge, challenge_title, challenge_xp } = req.body;
+      if (!action) return res.status(400).json({ error: 'action é obrigatório' });
+      if (['watched', 'rated', 'added_to_list'].includes(action) && !movie) {
+        return res.status(400).json({ error: 'movie é obrigatório para esta ação' });
+      }
 
       const userProfile = await usersCollection.findOne({ supabase_id: user.id });
 
@@ -46,13 +49,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         user_id: user.id,
         user_name: userProfile?.name || 'Usuário',
         user_avatar: userProfile?.avatar_url || null,
-        movie_id: movie.movieId,
-        movie_title: movie.title,
-        movie_poster: movie.poster_path,
-        action, // 'watched', 'rated', 'added_to_list'
-        rating,
-        review,
+        movie_id: movie?.movieId || null,
+        movie_title: movie?.title || null,
+        movie_poster: movie?.poster_path || null,
+        action, // 'watched', 'rated', 'added_to_list', 'unlocked_badge', 'challenge_completed'
+        rating: rating || null,
+        review: review || null,
         has_spoiler: has_spoiler || false,
+        badge: badge || null,
+        challenge_title: challenge_title || null,
+        challenge_xp: challenge_xp || null,
         likes: [],
         created_at: new Date().toISOString()
       };

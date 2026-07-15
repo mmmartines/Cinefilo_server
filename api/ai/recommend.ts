@@ -1,10 +1,9 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { authenticateUser } from '../../utils/supabase';
 import { db } from '../../utils/astra';
-import { GoogleGenAI } from '@google/genai';
 
-// Inicialização será feita no handler para garantir que as vars de ambiente estejam carregadas
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -20,11 +19,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ error: 'Chave da API do Gemini não configurada no servidor.' });
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(500).json({ error: 'Chave da API do Groq (GROQ_API_KEY) não configurada no servidor.' });
     }
     
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const user = await authenticateUser(req);
     const usersCollection = db.collection('users');
 
@@ -39,7 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Pega os 20 últimos filmes assistidos que tenham notas boas (se possível)
+    // Pega os 10 últimos filmes assistidos que tenham notas boas
     const recentFavorites = watchedMovies
       .filter((m: any) => m.status === 'watched' && m.rating >= 4)
       .slice(0, 10);
@@ -51,12 +49,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     promptText += "\nBaseado nisso, recomende 3 filmes parecidos que ele possa gostar, explicando brevemente o porquê de forma amigável e direta (use até 4 parágrafos no máximo). Não precisa colocar saudações iniciais, apenas comece a recomendar.";
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: promptText,
+    // Chamada direta via REST API para o Groq
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: 'Você é um cinéfilo especialista em cinema que dá ótimas recomendações. Seja direto, amigável e focado em filmes.' },
+          { role: 'user', content: promptText }
+        ],
+        temperature: 0.7,
+        max_tokens: 1024
+      })
     });
 
-    const recommendation = response.text || "Desculpe, não consegui pensar em nada no momento.";
+    if (!groqResponse.ok) {
+      const errorData = await groqResponse.text();
+      console.error('Groq Error:', errorData);
+      throw new Error(`Erro na API do Groq: ${groqResponse.status}`);
+    }
+
+    const data = await groqResponse.json();
+    const recommendation = data.choices?.[0]?.message?.content || "Desculpe, não consegui pensar em nada no momento.";
 
     return res.status(200).json({ success: true, recommendation });
   } catch (error: any) {

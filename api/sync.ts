@@ -22,7 +22,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user = await authenticateUser(req);
     const usersCollection = db.collection('users');
 
-    const { total_movies, total_minutes, watched_movies, avatar_url, expo_push_token, notifications_enabled } = req.body;
+    const { total_movies, total_minutes, watched_movies, avatar_url, expo_push_token, notifications_enabled, completed_challenges, bonus_xp } = req.body;
 
     if (typeof total_movies !== 'number' || typeof total_minutes !== 'number') {
       return res.status(400).json({ error: 'Dados estatísticos inválidos.' });
@@ -37,6 +37,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (avatar_url !== undefined) updateFields.avatar_url = avatar_url;
     if (expo_push_token !== undefined) updateFields.expo_push_token = expo_push_token;
     if (notifications_enabled !== undefined) updateFields.notifications_enabled = notifications_enabled;
+    if (completed_challenges !== undefined) updateFields.completed_challenges = completed_challenges;
+    if (bonus_xp !== undefined) updateFields.bonus_xp = bonus_xp;
 
     // Atualiza os stats e as listas de filmes no Astra DB
     await usersCollection.updateOne(

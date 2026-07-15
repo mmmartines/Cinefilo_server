@@ -35,7 +35,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         expo_push_token: myProfile.expo_push_token || null,
         notifications_enabled: myProfile.notifications_enabled ?? true,
         stats: myProfile.stats,
-        watched_movies: myProfile.watched_movies || []
+        watched_movies: myProfile.watched_movies || [],
+        completed_challenges: myProfile.completed_challenges || [],
+        bonus_xp: myProfile.bonus_xp || 0
       } 
     });
 

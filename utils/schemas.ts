@@ -21,6 +21,7 @@ export const createFeedItemSchema = z.object({
   action: z.enum(['watched', 'liked', 'reviewed', 'challenge_completed']),
   rating: z.number().min(0).max(5).optional().nullable(),
   review: z.string().optional().nullable(),
+  has_spoiler: z.boolean().optional(),
   emotions: z.array(z.string()).optional(),
   created_at: z.string().optional(),
 });

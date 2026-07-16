@@ -58,8 +58,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let activities = await cursor.toArray();
       // Emulação de skip
       activities = activities.slice((page - 1) * limit, page * limit);
+      
+      const userIds = [...new Set(activities.map((a: any) => a.user_id))];
+      const latestProfiles = await usersCollection.find({ supabase_id: { $in: userIds } }).toArray();
+      const avatarMap: Record<string, string> = {};
+      latestProfiles.forEach((p: any) => {
+        if (p.avatar_url) avatarMap[p.supabase_id] = p.avatar_url;
+      });
 
-      return res.status(200).json({ success: true, data: activities });
+      const updatedActivities = activities.map((act: any) => ({
+        ...act,
+        user_avatar: avatarMap[act.user_id] || act.user_avatar || null
+      }));
+
+      return res.status(200).json({ success: true, data: updatedActivities });
     }
 
     if (req.method === 'POST') {

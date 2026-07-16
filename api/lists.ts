@@ -48,10 +48,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (req.method === 'DELETE') {
-        await listsCollection.updateOne(
-          { _id: list_id },
-          { $pull: { movies: { movieId: movie.movieId } } }
-        );
+        const list = await listsCollection.findOne({ _id: list_id });
+        if (list && list.movies) {
+          const updatedMovies = list.movies.filter((m: any) => m.movieId !== movie.movieId);
+          await listsCollection.updateOne(
+            { _id: list_id },
+            { $set: { movies: updatedMovies } }
+          );
+        }
         return res.status(200).json({ success: true, message: 'Filme removido.' });
       }
     }

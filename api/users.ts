@@ -51,7 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // Se for o primeiro acesso, cria um perfil base no Astra DB
-        const newUser = {
+        const newUser: any = {
           supabase_id: user.id,
           email: user.email,
           name: user.user_metadata?.name || '',
@@ -62,6 +62,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             total_minutes: 0
           }
         };
+
+        if (user.user_metadata?.avatar_url || user.user_metadata?.picture) {
+          newUser.avatar_url = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+        }
         await usersCollection.insertOne(newUser);
         userProfile = newUser;
       }

@@ -13,7 +13,7 @@ const joinClubSchema = z.object({
 });
 
 
-async function sendPushNotification(expoPushToken, title, body) {
+async function sendPushNotification(expoPushToken: string, title: string, body: string) {
   if (!expoPushToken) return;
   try {
     await fetch('https://exp.host/--/api/v2/push/send', {

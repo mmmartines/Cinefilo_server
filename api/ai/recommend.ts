@@ -47,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       promptText += `- ${m.title} (Avaliação: ${m.rating}/5)\n`;
     });
 
-    promptText += "\nBaseado nisso, recomende 3 filmes parecidos que ele possa gostar, explicando brevemente o porquê de forma amigável e direta (use até 4 parágrafos no máximo). Não precisa colocar saudações iniciais, apenas comece a recomendar.";
+    promptText += "\nBaseado nisso, recomende 3 filmes parecidos de forma BEM CURTA e DIRETA. Para cada filme, escreva o título em negrito (**Título**) seguido de apenas uma frase explicando o porquê. Não use introduções, conclusões ou textos extras.";
 
     // Chamada direta via REST API para o Groq
     const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -59,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         messages: [
-          { role: 'system', content: 'Você é um cinéfilo especialista em cinema que dá ótimas recomendações. Seja direto, amigável e focado em filmes.' },
+          { role: 'system', content: 'Você é um recomendador de filmes extremamente objetivo. Responda apenas com a lista dos 3 filmes e uma frase curta para cada. Sem enrolação.' },
           { role: 'user', content: promptText }
         ],
         temperature: 0.7,

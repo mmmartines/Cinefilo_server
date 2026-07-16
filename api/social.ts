@@ -12,6 +12,29 @@ const joinClubSchema = z.object({
   joinCode: z.string().length(6)
 });
 
+
+async function sendPushNotification(expoPushToken, title, body) {
+  if (!expoPushToken) return;
+  try {
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Accept-encoding': 'gzip, deflate',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: expoPushToken,
+        sound: 'default',
+        title: title,
+        body: body,
+      }),
+    });
+  } catch (err) {
+    console.error('Erro ao enviar push notification:', err);
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -78,6 +101,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
           if (friendMatch) {
             isMatch = true;
+            // Busca o amigo para enviar push
+            const usersCollection = db.collection('users');
+            const friendProfile = await usersCollection.findOne({ supabase_id: friendId });
+            if (friendProfile && friendProfile.expo_push_token && friendProfile.notifications_enabled !== false) {
+              await sendPushNotification(
+                friendProfile.expo_push_token,
+                '🎬 Novo Match!',
+                'Alguém curtiu o mesmo filme que você. Hora de combinar a pipoca!'
+              );
+            }
           }
         }
 
@@ -120,6 +153,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             club.members.push(user.id);
             await clubsCollection.updateOne({ _id: club._id }, { $set: { members: club.members } });
+            
+            
+            // Envia push para o dono do clube
+            const usersCollection = db.collection('users');
+            const ownerProfile = await usersCollection.findOne({ supabase_id: club.owner_id });
+            const myProfile = await usersCollection.findOne({ supabase_id: user.id });
+            if (ownerProfile && ownerProfile.expo_push_token && ownerProfile.notifications_enabled !== false && club.owner_id !== user.id) {
+              const memberName = myProfile?.name || 'Um amigo';
+              await sendPushNotification(
+                ownerProfile.expo_push_token,
+                '🍿 Novo membro no Clube',
+                `${memberName} entrou no seu clube: ${club.name}!`
+              );
+            }
             
             return res.status(200).json({ success: true, message: 'Bem-vindo ao clube!', data: club });
           } catch (validationError: any) {

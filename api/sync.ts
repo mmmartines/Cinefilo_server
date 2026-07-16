@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { authenticateUser } from '../utils/supabase';
 import { db } from '../utils/astra';
+import { syncPayloadSchema } from '../utils/schemas';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS
@@ -22,17 +23,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user = await authenticateUser(req);
     const usersCollection = db.collection('users');
 
-    const { total_movies, total_minutes, watched_movies, avatar_url, expo_push_token, notifications_enabled, completed_challenges, bonus_xp } = req.body;
+    try {
+      const validatedPayload = syncPayloadSchema.parse(req.body);
+      
+      const { total_movies, total_minutes, watched_movies, avatar_url, expo_push_token, notifications_enabled, completed_challenges, bonus_xp, last_updated } = validatedPayload;
 
-    if (typeof total_movies !== 'number' || typeof total_minutes !== 'number') {
-      return res.status(400).json({ error: 'Dados estatísticos inválidos.' });
-    }
+      // Obtém o perfil atual para comparar a data de última atualização (resolução de conflitos)
+      const currentUserProfile = await usersCollection.findOne({ supabase_id: user.id });
+      
+      if (currentUserProfile && currentUserProfile.last_updated && last_updated) {
+        const cloudTime = new Date(currentUserProfile.last_updated).getTime();
+        const localTime = new Date(last_updated).getTime();
+        
+        // Se a nuvem tem dados mais recentes e o app mandou um dado antigo, rejeita a sincronização
+        if (cloudTime > localTime) {
+          return res.status(200).json({ success: true, message: 'Nuvem já possui dados mais recentes. Sincronização ignorada.', ignored: true });
+        }
+      }
 
-    const updateFields: any = {
-      'stats.total_movies': total_movies,
-      'stats.total_minutes': total_minutes,
-      'watched_movies': watched_movies || []
-    };
+      const updateFields: any = {
+        'stats.total_movies': total_movies,
+        'stats.total_minutes': total_minutes,
+        'watched_movies': watched_movies || [],
+        'last_updated': last_updated || new Date().toISOString()
+      };
     
     if (avatar_url !== undefined) updateFields.avatar_url = avatar_url;
     if (expo_push_token !== undefined) updateFields.expo_push_token = expo_push_token;
@@ -47,6 +61,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
 
     return res.status(200).json({ success: true, message: 'Dados sincronizados com sucesso' });
+    } catch (validationError: any) {
+      return res.status(400).json({ error: 'Dados inv�lidos', details: validationError.errors });
+    }
 
   } catch (error: any) {
     console.error('Erro na API /sync:', error);

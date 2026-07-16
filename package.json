@@ -13,10 +13,14 @@
     "@datastax/astra-db-ts": "^2.2.1",
     "@google/genai": "^2.11.0",
     "@supabase/supabase-js": "^2.110.2",
-    "cors": "^2.8.6"
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "jsonwebtoken": "^9.0.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
+    "@types/jsonwebtoken": "^9.0.10",
     "@vercel/node": "^5.8.23",
     "typescript": "^5.4.5"
   },

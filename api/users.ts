@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { authenticateUser } from '../utils/supabase';
 import { db } from '../utils/astra';
+import { updateUserSchema } from '../utils/schemas';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Configuração básica de CORS
@@ -74,13 +75,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (req.method === 'PUT') {
-      // Exemplo: Atualizar dados do usuário
-      const updates = req.body;
-      await usersCollection.updateOne(
-        { supabase_id: user.id },
-        { $set: updates }
-      );
-      return res.status(200).json({ success: true, message: 'Usuário atualizado com sucesso' });
+      try {
+        // Valida dados do usuário usando Zod
+        const updates = updateUserSchema.parse(req.body);
+        
+        await usersCollection.updateOne(
+          { supabase_id: user.id },
+          { $set: updates }
+        );
+        return res.status(200).json({ success: true, message: 'Usuário atualizado com sucesso' });
+      } catch (validationError: any) {
+        return res.status(400).json({ error: 'Dados inválidos', details: validationError.errors });
+      }
     }
 
     if (req.method === 'DELETE') {

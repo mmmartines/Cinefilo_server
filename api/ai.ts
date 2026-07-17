@@ -52,13 +52,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: "llama3-8b-8192",
+          model: "llama-3.1-8b-instant",
           messages: [{ role: "user", content: promptText }],
           temperature: 0.7,
         })
       });
 
-      if (!groqRes.ok) throw new Error('Falha na resposta do Groq');
+      if (!groqRes.ok) {
+        const errorText = await groqRes.text();
+        throw new Error(`Falha na resposta do Groq: ${groqRes.status} ${errorText}`);
+      }
       const groqData = await groqRes.json();
       return res.status(200).json({ success: true, recommendation: groqData.choices[0].message.content });
     }
@@ -82,13 +85,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: "llama3-8b-8192",
+          model: "llama-3.1-8b-instant",
           messages: [systemPrompt, ...messages],
           temperature: 0.7,
         })
       });
 
-      if (!groqRes.ok) throw new Error('Falha na resposta do Groq');
+      if (!groqRes.ok) {
+        const errorText = await groqRes.text();
+        throw new Error(`Falha na resposta do Groq: ${groqRes.status} ${errorText}`);
+      }
       const groqData = await groqRes.json();
       return res.status(200).json({ success: true, message: groqData.choices[0].message.content });
     }

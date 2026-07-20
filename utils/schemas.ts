@@ -36,5 +36,7 @@ export const syncPayloadSchema = z.object({
   notifications_enabled: z.boolean().optional(),
   completed_challenges: z.array(z.string()).optional(),
   bonus_xp: z.number().min(0).optional(),
+  level: z.number().min(1).optional(),
+  xp: z.number().min(0).optional(),
   last_updated: z.string().optional()
 });

@@ -1,4 +1,4 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+﻿import { VercelRequest, VercelResponse } from '@vercel/node';
 import { authenticateUser } from '../utils/supabase';
 import { db } from '../utils/astra';
 
@@ -17,25 +17,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user = await authenticateUser(req);
     const usersCollection = db.collection('users');
 
-    // ─── GET /api/friends?id=<supabase_id> → detalhes de um amigo específico
+    // â”€â”€â”€ GET /api/friends?id=<supabase_id> â†’ detalhes de um amigo especÃ­fico
     if (req.method === 'GET' && req.query.id) {
       const { id } = req.query;
 
       if (typeof id !== 'string') {
-        return res.status(400).json({ error: 'ID inválido' });
+        return res.status(400).json({ error: 'ID invÃ¡lido' });
       }
 
       const myProfile = await usersCollection.findOne({ supabase_id: user.id });
-      if (!myProfile) return res.status(404).json({ error: 'Seu perfil não encontrado' });
+      if (!myProfile) return res.status(404).json({ error: 'Seu perfil nÃ£o encontrado' });
 
       const myFriends = myProfile.friends || [];
       if (!myFriends.includes(id) && id !== user.id) {
-        return res.status(403).json({ error: 'Você só pode ver os detalhes de quem é seu amigo.' });
+        return res.status(403).json({ error: 'VocÃª sÃ³ pode ver os detalhes de quem Ã© seu amigo.' });
       }
 
       const friendProfile = await usersCollection.findOne({ supabase_id: id });
       if (!friendProfile) {
-        return res.status(404).json({ error: 'Perfil do amigo não encontrado' });
+        return res.status(404).json({ error: 'Perfil do amigo nÃ£o encontrado' });
       }
 
       return res.status(200).json({
@@ -50,10 +50,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // ─── GET /api/friends → leaderboard (usuário + amigos ordenados por tempo)
+    // â”€â”€â”€ GET /api/friends â†’ leaderboard (usuÃ¡rio + amigos ordenados por tempo)
     if (req.method === 'GET') {
       const userProfile = await usersCollection.findOne({ supabase_id: user.id });
-      if (!userProfile) return res.status(404).json({ error: 'Perfil não encontrado' });
+      if (!userProfile) return res.status(404).json({ error: 'Perfil nÃ£o encontrado' });
 
       const friendsIds = userProfile.friends || [];
       let allProfiles = [userProfile];
@@ -79,30 +79,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         isMe: p.supabase_id === user.id,
         total_movies: p.stats?.total_movies || 0,
         total_minutes: p.stats?.total_minutes || 0,
+        xp: p.stats?.xp || ((p.stats?.total_movies || 0) * 10),
+        level: p.stats?.level || (Math.floor(((p.stats?.total_movies || 0) * 10) / 100) + 1),
       }));
 
       return res.status(200).json({ success: true, data: leaderboard });
     }
 
-    // ─── POST /api/friends → adiciona amigo pela Tag
+    // â”€â”€â”€ POST /api/friends â†’ adiciona amigo pela Tag
     if (req.method === 'POST') {
       const { tag } = req.body;
-      if (!tag) return res.status(400).json({ error: 'Tag é obrigatória' });
+      if (!tag) return res.status(400).json({ error: 'Tag Ã© obrigatÃ³ria' });
 
       const friendProfile = await usersCollection.findOne({ tag: tag.toUpperCase() });
       if (!friendProfile) {
-        return res.status(404).json({ error: 'Nenhum usuário encontrado com essa Tag' });
+        return res.status(404).json({ error: 'Nenhum usuÃ¡rio encontrado com essa Tag' });
       }
 
       if (friendProfile.supabase_id === user.id) {
-        return res.status(400).json({ error: 'Você não pode adicionar a si mesmo' });
+        return res.status(400).json({ error: 'VocÃª nÃ£o pode adicionar a si mesmo' });
       }
 
       const userProfile = await usersCollection.findOne({ supabase_id: user.id });
       const currentFriends = userProfile?.friends || [];
 
       if (currentFriends.includes(friendProfile.supabase_id)) {
-        return res.status(400).json({ error: 'Vocês já são amigos!' });
+        return res.status(400).json({ error: 'VocÃªs jÃ¡ sÃ£o amigos!' });
       }
 
       currentFriends.push(friendProfile.supabase_id);
@@ -123,13 +125,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, message: 'Amigo adicionado com sucesso!' });
     }
 
-    // ─── DELETE /api/friends → remove amigo
+    // â”€â”€â”€ DELETE /api/friends â†’ remove amigo
     if (req.method === 'DELETE') {
       const { friend_id } = req.body;
-      if (!friend_id) return res.status(400).json({ error: 'ID do amigo é obrigatório' });
+      if (!friend_id) return res.status(400).json({ error: 'ID do amigo Ã© obrigatÃ³rio' });
 
       const userProfile = await usersCollection.findOne({ supabase_id: user.id });
-      if (!userProfile) return res.status(404).json({ error: 'Perfil não encontrado' });
+      if (!userProfile) return res.status(404).json({ error: 'Perfil nÃ£o encontrado' });
 
       let currentFriends = userProfile.friends || [];
       if (currentFriends.includes(friend_id)) {
@@ -161,3 +163,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: error.message || 'Erro interno' });
   }
 }
+

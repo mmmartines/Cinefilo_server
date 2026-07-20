@@ -1,4 +1,4 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+﻿import { VercelRequest, VercelResponse } from '@vercel/node';
 import { authenticateUser } from '../utils/supabase';
 import { db } from '../utils/astra';
 import { syncPayloadSchema } from '../utils/schemas';
@@ -26,18 +26,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const validatedPayload = syncPayloadSchema.parse(req.body);
       
-      const { total_movies, total_minutes, watched_movies, avatar_url, expo_push_token, notifications_enabled, completed_challenges, bonus_xp, last_updated } = validatedPayload;
+      const { total_movies, total_minutes, watched_movies, avatar_url, expo_push_token, notifications_enabled, completed_challenges, bonus_xp, level, xp, last_updated } = validatedPayload;
 
-      // Obtém o perfil atual para comparar a data de última atualização (resolução de conflitos)
+      // ObtÃ©m o perfil atual para comparar a data de Ãºltima atualizaÃ§Ã£o (resoluÃ§Ã£o de conflitos)
       const currentUserProfile = await usersCollection.findOne({ supabase_id: user.id });
       
       if (currentUserProfile && currentUserProfile.last_updated && last_updated) {
         const cloudTime = new Date(currentUserProfile.last_updated).getTime();
         const localTime = new Date(last_updated).getTime();
         
-        // Se a nuvem tem dados mais recentes e o app mandou um dado antigo, rejeita a sincronização
+        // Se a nuvem tem dados mais recentes e o app mandou um dado antigo, rejeita a sincronizaÃ§Ã£o
         if (cloudTime > localTime) {
-          return res.status(200).json({ success: true, message: 'Nuvem já possui dados mais recentes. Sincronização ignorada.', ignored: true });
+          return res.status(200).json({ success: true, message: 'Nuvem jÃ¡ possui dados mais recentes. SincronizaÃ§Ã£o ignorada.', ignored: true });
         }
       }
 
@@ -53,6 +53,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (notifications_enabled !== undefined) updateFields.notifications_enabled = notifications_enabled;
     if (completed_challenges !== undefined) updateFields.completed_challenges = completed_challenges;
     if (bonus_xp !== undefined) updateFields.bonus_xp = bonus_xp;
+    if (level !== undefined) updateFields['stats.level'] = level;
+    if (xp !== undefined) updateFields['stats.xp'] = xp;
 
     // Atualiza os stats e as listas de filmes no Astra DB
     await usersCollection.updateOne(
@@ -62,11 +64,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({ success: true, message: 'Dados sincronizados com sucesso' });
     } catch (validationError: any) {
-      return res.status(400).json({ error: 'Dados inv�lidos', details: validationError.errors });
+      return res.status(400).json({ error: 'Dados inválidos', details: validationError.errors });
     }
 
   } catch (error: any) {
     console.error('Erro na API /sync:', error);
-    return res.status(401).json({ error: error.message || 'Não autorizado' });
+    return res.status(401).json({ error: error.message || 'NÃ£o autorizado' });
   }
 }
+

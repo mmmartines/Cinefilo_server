@@ -90,6 +90,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       };
 
       await requestsCollection.insertOne(newRequest);
+      
+      // Enviar Push Notification
+      if (friendProfile.expo_push_token && friendProfile.notifications_enabled !== false) {
+        await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Accept-encoding': 'gzip, deflate',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify([{
+            to: friendProfile.expo_push_token,
+            sound: 'default',
+            title: `Novo pedido de amizade!`,
+            body: `${userProfile?.name || 'Alguém'} enviou um pedido de amizade.`,
+            data: { type: 'friend_request', tag: userProfile?.tag },
+          }]),
+        });
+      }
+
       return res.status(200).json({ success: true, message: `Solicitação enviada para ${friendProfile.name}!` });
     }
 

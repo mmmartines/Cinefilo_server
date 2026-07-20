@@ -17,6 +17,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user = await authenticateUser(req);
     const notificationsCollection = db.collection('notifications');
 
+    // Ensure chat_reads collection exists if needed
+    const collections = await db.listCollections();
+    if (!collections.some((col: any) => col.name === 'chat_reads')) {
+      await db.createCollection('chat_reads');
+    }
+    const chatReadsCollection = db.collection('chat_reads');
+
+    const type = req.query.type;
+
+    if (type === 'chat_reads') {
+      if (req.method === 'GET') {
+        const cursor = await chatReadsCollection.find({ user_id: user.id });
+        const reads = await cursor.toArray();
+        return res.status(200).json({ success: true, data: reads });
+      }
+
+      if (req.method === 'PUT') {
+        const { chat_id, last_read_at } = req.body;
+        if (!chat_id) return res.status(400).json({ error: 'chat_id is required' });
+
+        let now = last_read_at;
+        if (!now) {
+          const date = new Date();
+          date.setSeconds(date.getSeconds() + 5);
+          now = date.toISOString();
+        }
+
+        const existing = await chatReadsCollection.findOne({ user_id: user.id, chat_id });
+
+        if (existing) {
+          await chatReadsCollection.updateOne(
+            { _id: existing._id },
+            { $set: { last_read_at: now } }
+          );
+        } else {
+          await chatReadsCollection.insertOne({
+            user_id: user.id,
+            chat_id,
+            last_read_at: now
+          });
+        }
+        return res.status(200).json({ success: true, last_read_at: now });
+      }
+      return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
     if (req.method === 'GET') {
       const cursor = await notificationsCollection.find(
         { target_user_id: user.id },

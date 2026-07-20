@@ -153,6 +153,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             created_at: new Date().toISOString(),
             read: false
          });
+         
+         // Enviar Push Notification
+         const targetProfile = await usersCollection.findOne({ supabase_id: activity.user_id });
+         if (targetProfile && targetProfile.expo_push_token && targetProfile.notifications_enabled !== false) {
+           const actionLabel = reaction_type === 'love' ? 'amei' : reaction_type === 'funny' ? 'haha' : reaction_type === 'sad' ? 'triste' : 'curtiu';
+           await fetch('https://exp.host/--/api/v2/push/send', {
+             method: 'POST',
+             headers: {
+               Accept: 'application/json',
+               'Accept-encoding': 'gzip, deflate',
+               'Content-Type': 'application/json',
+             },
+             body: JSON.stringify([{
+               to: targetProfile.expo_push_token,
+               sound: 'default',
+               title: `Nova reação no seu post!`,
+               body: `${userProfile?.name || 'Alguém'} reagiu com ${actionLabel} ao seu post de ${activity.movie_title || 'um filme'}.`,
+               data: { type: 'reaction', activity_id: activity._id },
+             }]),
+           });
+         }
       }
 
       return res.status(200).json({ success: true, reactions });

@@ -29,26 +29,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Populate user info for received requests (who sent them)
       const receivedPopulated = await Promise.all(received.map(async (r: any) => {
         const sender = await usersCollection.findOne({ supabase_id: r.from_user_id });
-        return { ...r, sender_name: sender?.name, sender_tag: sender?.tag, sender_avatar: sender?.avatar_url };
+        return { ...r, sender_name: sender?.name, sender_nickname: sender?.nickname, sender_avatar: sender?.avatar_url };
       }));
 
       // Populate user info for sent requests (to whom they were sent)
       const sentPopulated = await Promise.all(sent.map(async (r: any) => {
         const receiver = await usersCollection.findOne({ supabase_id: r.to_user_id });
-        return { ...r, receiver_name: receiver?.name, receiver_tag: receiver?.tag, receiver_avatar: receiver?.avatar_url };
+        return { ...r, receiver_name: receiver?.name, receiver_nickname: receiver?.nickname, receiver_avatar: receiver?.avatar_url };
       }));
 
       return res.status(200).json({ success: true, data: { received: receivedPopulated, sent: sentPopulated } });
     }
 
-    // POST: Send a request (by tag)
+    // POST: Send a request (by nickname)
     if (req.method === 'POST') {
-      const { tag } = req.body;
-      if (!tag) return res.status(400).json({ error: 'Tag é obrigatória' });
+      const { nickname } = req.body;
+      if (!nickname) return res.status(400).json({ error: 'Apelido é obrigatório' });
+      
+      const cleanNickname = nickname.replace('@', '').toLowerCase();
 
-      const friendProfile = await usersCollection.findOne({ tag: tag.toUpperCase() });
+      const friendProfile = await usersCollection.findOne({ nickname: cleanNickname });
       if (!friendProfile) {
-        return res.status(404).json({ error: 'Nenhum usuário encontrado com essa Tag' });
+        return res.status(404).json({ error: 'Nenhum usuário encontrado com esse apelido' });
       }
 
       if (friendProfile.supabase_id === user.id) {

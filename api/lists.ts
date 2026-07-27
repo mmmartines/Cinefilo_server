@@ -101,6 +101,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(201).json({ success: true, data: newList });
     }
 
+    // ─── DELETE /api/lists → deleta a lista (apenas dono)
+    if (req.method === 'DELETE' && !req.query.action) {
+      const { id } = req.body;
+      if (!id) return res.status(400).json({ error: 'ID da lista não informado.' });
+      
+      const list = await listsCollection.findOne({ _id: id });
+      if (!list) return res.status(404).json({ error: 'Lista não encontrada' });
+      
+      if (list.owner_id !== user.id) {
+        return res.status(403).json({ error: 'Apenas o dono pode excluir a lista' });
+      }
+      
+      await listsCollection.deleteOne({ _id: id });
+      return res.status(200).json({ success: true, message: 'Lista excluída.' });
+    }
+
+    // ─── PUT /api/lists → renomeia a lista (apenas dono)
+    if (req.method === 'PUT' && !req.query.action) {
+      const { id, name } = req.body;
+      if (!id || !name) return res.status(400).json({ error: 'Dados inválidos.' });
+      
+      const list = await listsCollection.findOne({ _id: id });
+      if (!list) return res.status(404).json({ error: 'Lista não encontrada' });
+      
+      if (list.owner_id !== user.id) {
+        return res.status(403).json({ error: 'Apenas o dono pode renomear a lista' });
+      }
+      
+      await listsCollection.updateOne(
+        { _id: id },
+        { $set: { name } }
+      );
+      return res.status(200).json({ success: true, message: 'Lista renomeada.' });
+    }
+
     return res.status(405).json({ error: 'Method Not Allowed' });
 
   } catch (error: any) {

@@ -19,9 +19,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const listsCollection = db.collection('shared_lists');
     const usersCollection = db.collection('users');
 
-    const { list_id, friend_tag } = req.body;
+    const { list_id, friend_nickname } = req.body;
     
-    if (!list_id || !friend_tag) {
+    if (!list_id || !friend_nickname) {
       return res.status(400).json({ error: 'Dados inválidos.' });
     }
 
@@ -35,9 +35,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // 2. Busca o amigo pela tag
-      const friendProfile = await usersCollection.findOne({ tag: friend_tag });
+      const cleanNickname = friend_nickname.replace('@', '').toLowerCase();
+      const friendProfile = await usersCollection.findOne({ nickname: cleanNickname });
       if (!friendProfile) {
-        return res.status(404).json({ error: 'Nenhum usuário encontrado com essa Tag.' });
+        return res.status(404).json({ error: 'Nenhum usuário encontrado com esse @apelido.' });
       }
 
       // 3. Adiciona o ID do amigo ao array shared_with (se já não estiver lá)

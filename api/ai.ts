@@ -43,7 +43,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         promptText += `- ${m.title} (Avaliação: ${m.rating}/5)\n`;
       });
 
-      promptText += "\nBaseado nisso, recomende 3 filmes parecidos de forma BEM CURTA e DIRETA. Para cada filme, escreva o título em negrito (**Título**) seguido de apenas uma frase explicando o porquê. Não use introduções, conclusões ou textos extras.";
+      const favGenres = userProfile.favorite_genres || [];
+      const favProviders = userProfile.favorite_providers || [];
+      
+      let contextPrefs = '';
+      if (favGenres.length > 0) {
+        contextPrefs += `O usuário prefere filmes com esses IDs de gênero: ${favGenres.join(', ')}. `;
+      }
+      if (favProviders.length > 0) {
+        contextPrefs += `Priorize filmes que estejam nestes provedores de streaming (IDs TMDB): ${favProviders.join(', ')}. `;
+      }
+
+      promptText += `\n${contextPrefs}Baseado nisso, recomende 3 filmes parecidos de forma BEM CURTA e DIRETA. Para cada filme, escreva o título em negrito (**Título**) seguido de apenas uma frase explicando o porquê. Não use introduções, conclusões ou textos extras.`;
 
       const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -73,9 +84,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Messages não enviadas corretamente' });
       }
 
+      const usersCollection = db.collection('users');
+      const userProfile = await usersCollection.findOne({ supabase_id: user.id });
+      const favGenres = userProfile?.favorite_genres || [];
+      const favProviders = userProfile?.favorite_providers || [];
+      
+      let contextPrefs = '';
+      if (favGenres.length > 0) {
+        contextPrefs += `\nO usuário informou que prefere filmes com esses IDs de gênero do TMDB: ${favGenres.join(', ')}. `;
+      }
+      if (favProviders.length > 0) {
+        contextPrefs += `\nO usuário informou que assiste filmes nestes IDs de streaming (Watch Providers) do TMDB: ${favProviders.join(', ')}. Dê forte prioridade a filmes que ele consiga assistir nestes serviços no Brasil. `;
+      }
+
       const systemPrompt = {
         role: 'system',
-        content: 'Você é a Cinemateca, uma assistente virtual especializada em cinema da plataforma Cinelândia. Responda de forma curta, engajante e em pt-BR. Seu objetivo é indicar filmes, discutir cinema, atores e diretores. Mantenha as respostas objetivas.'
+        content: `Você é a Cinemateca, uma assistente virtual especializada em cinema da plataforma Cinelândia. Responda de forma curta, engajante e em pt-BR. Seu objetivo é indicar filmes, discutir cinema, atores e diretores. Mantenha as respostas objetivas.${contextPrefs}`
       };
 
       const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {

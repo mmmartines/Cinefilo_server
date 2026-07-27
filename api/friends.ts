@@ -1,4 +1,4 @@
-﻿import { VercelRequest, VercelResponse } from '@vercel/node';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { authenticateUser } from '../utils/supabase';
 import { db } from '../utils/astra';
 
@@ -86,18 +86,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, data: leaderboard });
     }
 
-    // â”€â”€â”€ POST /api/friends â†’ adiciona amigo pela Tag
+    // ——— POST /api/friends → adiciona amigo pelo Nickname
     if (req.method === 'POST') {
-      const { tag } = req.body;
-      if (!tag) return res.status(400).json({ error: 'Tag Ã© obrigatÃ³ria' });
+      const { nickname } = req.body;
+      if (!nickname) return res.status(400).json({ error: 'Apelido (nickname) é obrigatório' });
 
-      const friendProfile = await usersCollection.findOne({ tag: tag.toUpperCase() });
+      // Clean nickname format if user typed @
+      const cleanNickname = nickname.replace('@', '').toLowerCase();
+
+      const friendProfile = await usersCollection.findOne({ nickname: cleanNickname });
       if (!friendProfile) {
-        return res.status(404).json({ error: 'Nenhum usuÃ¡rio encontrado com essa Tag' });
+        return res.status(404).json({ error: 'Nenhum usuário encontrado com esse @apelido' });
       }
 
       if (friendProfile.supabase_id === user.id) {
-        return res.status(400).json({ error: 'VocÃª nÃ£o pode adicionar a si mesmo' });
+        return res.status(400).json({ error: 'Você não pode adicionar a si mesmo' });
       }
 
       const userProfile = await usersCollection.findOne({ supabase_id: user.id });

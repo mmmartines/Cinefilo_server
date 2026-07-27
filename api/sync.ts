@@ -1,4 +1,4 @@
-﻿import { VercelRequest, VercelResponse } from '@vercel/node';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { authenticateUser } from '../utils/supabase';
 import { db } from '../utils/astra';
 import { syncPayloadSchema } from '../utils/schemas';
@@ -26,7 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const validatedPayload = syncPayloadSchema.parse(req.body);
       
-      const { total_movies, total_minutes, watched_movies, avatar_url, expo_push_token, notifications_enabled, completed_challenges, bonus_xp, level, xp, last_updated } = validatedPayload;
+      const { total_movies, total_minutes, watched_movies, avatar_url, expo_push_token, notifications_enabled, completed_challenges, bonus_xp, level, xp, last_updated, favorite_genres, favorite_providers } = validatedPayload;
 
       // ObtÃ©m o perfil atual para comparar a data de Ãºltima atualizaÃ§Ã£o (resoluÃ§Ã£o de conflitos)
       const currentUserProfile = await usersCollection.findOne({ supabase_id: user.id });
@@ -55,6 +55,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (bonus_xp !== undefined) updateFields.bonus_xp = bonus_xp;
     if (level !== undefined) updateFields['stats.level'] = level;
     if (xp !== undefined) updateFields['stats.xp'] = xp;
+    if (favorite_genres !== undefined) updateFields.favorite_genres = favorite_genres;
+    if (favorite_providers !== undefined) updateFields.favorite_providers = favorite_providers;
 
     // Atualiza os stats e as listas de filmes no Astra DB
     await usersCollection.updateOne(

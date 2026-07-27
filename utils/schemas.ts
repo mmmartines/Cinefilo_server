@@ -6,6 +6,7 @@ export const idSchema = z.string().uuid("ID inválido");
 // Users
 export const updateUserSchema = z.object({
   name: z.string().min(2, "Nome muito curto").max(100).optional(),
+  nickname: z.string().optional().nullable(),
   avatar_url: z.string().url("URL de avatar inválida").optional().nullable(),
   email: z.string().email("Email inválido").optional(),
   birthdate: z.string().optional().nullable(),
@@ -38,5 +39,7 @@ export const syncPayloadSchema = z.object({
   bonus_xp: z.number().min(0).optional(),
   level: z.number().min(1).optional(),
   xp: z.number().min(0).optional(),
-  last_updated: z.string().optional()
+  last_updated: z.string().optional(),
+  favorite_genres: z.array(z.number()).optional(),
+  favorite_providers: z.array(z.number()).optional()
 });

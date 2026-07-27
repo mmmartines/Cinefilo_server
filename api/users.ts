@@ -34,30 +34,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let userProfile = await usersCollection.findOne({ supabase_id: user.id });
 
       if (!userProfile) {
-        // Gera uma tag alfanumérica única de 10 dígitos
-        let userTag = '';
-        let isUnique = false;
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        
-        while (!isUnique) {
-          userTag = '';
-          for (let i = 0; i < 10; i++) {
-            userTag += characters.charAt(Math.floor(Math.random() * characters.length));
-          }
-          // Verifica se a tag já existe no banco
-          const existingTag = await usersCollection.findOne({ tag: userTag });
-          if (!existingTag) {
-            isUnique = true;
-          }
-        }
-
         // Se for o primeiro acesso, cria um perfil base no Astra DB
         const newUser: any = {
           supabase_id: user.id,
           email: user.email,
           name: user.user_metadata?.name || '',
-          tag: userTag,
+          nickname: '', // Inicializa sem apelido
           created_at: new Date().toISOString(),
+          provider: user.app_metadata?.provider || 'email',
           stats: {
             total_movies: 0,
             total_minutes: 0

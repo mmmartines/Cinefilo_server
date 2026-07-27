@@ -45,10 +45,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!existing) {
           isAvailable = true;
         } else {
-          suggestedNickname =  + "${baseName}" + @";
+          suggestedNickname = `${baseName}${Math.floor(Math.random() * 1000)}`;
           counter++;
           if (counter > 10) {
-            suggestedNickname =  + "${baseName}" + @";
+            suggestedNickname = `${baseName}${Date.now().toString().slice(-4)}`;
             isAvailable = true; 
           }
         }

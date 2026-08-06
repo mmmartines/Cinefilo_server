@@ -44,6 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           id: friendProfile.supabase_id,
           name: friendProfile.name,
           tag: friendProfile.tag,
+          avatar_url: friendProfile.avatar_url || null,
           stats: friendProfile.stats,
           watched_movies: friendProfile.watched_movies || [],
         }
@@ -79,6 +80,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         isMe: p.supabase_id === user.id,
         total_movies: p.stats?.total_movies || 0,
         total_minutes: p.stats?.total_minutes || 0,
+        total_minutes_movies: p.stats?.total_minutes_movies || 0,
+        total_minutes_tv: p.stats?.total_minutes_tv || 0,
         xp: p.stats?.xp || ((p.stats?.total_movies || 0) * 10),
         level: p.stats?.level || (Math.floor(((p.stats?.total_movies || 0) * 10) / 100) + 1),
       }));

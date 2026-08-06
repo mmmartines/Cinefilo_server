@@ -26,7 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const validatedPayload = syncPayloadSchema.parse(req.body);
       
-      const { total_movies, total_minutes, watched_movies, avatar_url, expo_push_token, notifications_enabled, completed_challenges, bonus_xp, level, xp, last_updated, favorite_genres, favorite_providers } = validatedPayload;
+      const { total_movies, total_minutes, total_minutes_movies, total_minutes_tv, watched_movies, avatar_url, expo_push_token, notifications_enabled, completed_challenges, bonus_xp, level, xp, last_updated, favorite_genres, favorite_providers } = validatedPayload;
 
       // ObtÃ©m o perfil atual para comparar a data de Ãºltima atualizaÃ§Ã£o (resoluÃ§Ã£o de conflitos)
       const currentUserProfile = await usersCollection.findOne({ supabase_id: user.id });

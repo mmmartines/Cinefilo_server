@@ -31,6 +31,8 @@ export const createFeedItemSchema = z.object({
 export const syncPayloadSchema = z.object({
   total_movies: z.number().min(0),
   total_minutes: z.number().min(0),
+  total_minutes_movies: z.number().min(0).optional(),
+  total_minutes_tv: z.number().min(0).optional(),
   watched_movies: z.array(z.any()).optional(),
   avatar_url: z.string().url("URL de avatar inválida").optional().nullable(),
   expo_push_token: z.string().optional().nullable(),
